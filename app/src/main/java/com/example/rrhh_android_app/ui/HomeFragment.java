@@ -31,8 +31,6 @@ import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
 
-import java.io.IOException;
-
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -103,7 +101,7 @@ public class HomeFragment extends Fragment {
 
     private void cerrarSesion() {
         SharedPreferences pref = getActivity().getSharedPreferences("RRHH_PREFS", Context.MODE_PRIVATE);
-        pref.edit().clear().apply(); // Borra el token guardado
+        pref.edit().clear().apply();
 
         Navigation.findNavController(getView()).navigate(R.id.loginFragment);
         Toast.makeText(getContext(), "Sesión cerrada correctamente", Toast.LENGTH_SHORT).show();
@@ -114,21 +112,30 @@ public class HomeFragment extends Fragment {
             @Override
             public void onResponse(Call<EstadoResponse> call, Response<EstadoResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    estaFichado = response.body().isFichado(); // El servidor debe devolver true si hora_salida es null
-
-                    // Cambiar el UI
-                    if (estaFichado) {
-                        btnFichar.setText("FICHAR SALIDA");
-                        btnFichar.setBackgroundColor(Color.RED);
-                    } else {
-                        btnFichar.setText("FICHAR ENTRADA");
-                        btnFichar.setBackgroundColor(Color.GREEN);
-                    }
+                    estaFichado = response.body().isFichado();
+                } else {
+                    // 404 u otro error = no fichado hoy
+                    estaFichado = false;
                 }
+                actualizarBoton();
             }
+
             @Override
-            public void onFailure(Call<EstadoResponse> call, Throwable t) {}
+            public void onFailure(Call<EstadoResponse> call, Throwable t) {
+                estaFichado = false;
+                actualizarBoton();
+            }
         });
+    }
+
+    private void actualizarBoton() {
+        if (estaFichado) {
+            btnFichar.setText("FICHAR SALIDA");
+            btnFichar.setBackgroundColor(Color.RED);
+        } else {
+            btnFichar.setText("FICHAR ENTRADA");
+            btnFichar.setBackgroundColor(Color.GREEN);
+        }
     }
 
     private void obtenerUbicacionYFichar() {
@@ -177,7 +184,11 @@ public class HomeFragment extends Fragment {
                     actualizarEstado();
                 }
             }
-            @Override public void onFailure(Call<Void> call, Throwable t) {}
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                Toast.makeText(getContext(), "Error de red: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
         });
     }
 
