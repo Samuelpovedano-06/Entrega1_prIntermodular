@@ -1,14 +1,11 @@
 package com.example.rrhh_android_app.ui;
 
 import android.Manifest;
-import android.app.PendingIntent;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.nfc.NfcAdapter;
-import android.nfc.Tag;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
@@ -21,7 +18,6 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
-import androidx.navigation.Navigation;
 
 import com.example.rrhh_android_app.R;
 import com.example.rrhh_android_app.api.RetrofitClient;
@@ -73,7 +69,6 @@ public class HomeFragment extends Fragment {
         String nombre = pref.getString("nombre", "");
         if (tvNombre != null) tvNombre.setText("Hola, " + nombre);
 
-        // Arrancar worker de notificaciones
         FichajeScheduler.programarWorker(getContext());
 
         actualizarEstado();
@@ -84,7 +79,6 @@ public class HomeFragment extends Fragment {
             else realizarSalida();
         });
 
-        // NFC: mostrar diálogo para acercar tarjeta
         btnNfc.setOnClickListener(v -> {
             if (nfcAdapter == null) {
                 Toast.makeText(getContext(), "Este dispositivo no tiene NFC", Toast.LENGTH_SHORT).show();
@@ -103,7 +97,6 @@ public class HomeFragment extends Fragment {
     // Llamado desde MainActivity cuando se detecta una tag NFC
     public void procesarNfc() {
         if (!estaFichado) {
-            // Fichar entrada por NFC (sin GPS)
             RetrofitClient.getApiService().ficharEntrada(token, new LocationRequest(0, 0))
                     .enqueue(new Callback<Void>() {
                         @Override
@@ -112,17 +105,12 @@ public class HomeFragment extends Fragment {
                                 Toast.makeText(getContext(), "¡Entrada NFC registrada!", Toast.LENGTH_SHORT).show();
                                 actualizarEstado();
                             } else {
-                                try {
-                                    String err = response.errorBody().string();
-                                    Toast.makeText(getContext(), err, Toast.LENGTH_LONG).show();
-                                } catch (Exception e) {
-                                    Toast.makeText(getContext(), "Error al fichar", Toast.LENGTH_SHORT).show();
-                                }
+                                mostrarErrorServidor(response);
                             }
                         }
                         @Override
                         public void onFailure(Call<Void> call, Throwable t) {
-                            Toast.makeText(getContext(), "Error de red", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getContext(), "Sin conexión", Toast.LENGTH_SHORT).show();
                         }
                     });
         } else {
@@ -196,17 +184,12 @@ public class HomeFragment extends Fragment {
                             Toast.makeText(getContext(), "¡Entrada registrada!", Toast.LENGTH_SHORT).show();
                             actualizarEstado();
                         } else {
-                            try {
-                                String errorMsg = response.errorBody().string();
-                                Toast.makeText(getContext(), errorMsg, Toast.LENGTH_LONG).show();
-                            } catch (Exception e) {
-                                Toast.makeText(getContext(), "Error en el servidor", Toast.LENGTH_SHORT).show();
-                            }
+                            mostrarErrorServidor(response);
                         }
                     }
                     @Override
                     public void onFailure(Call<Void> call, Throwable t) {
-                        Toast.makeText(getContext(), "Error de red: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), "Sin conexión", Toast.LENGTH_SHORT).show();
                     }
                 });
             } else {
@@ -222,13 +205,44 @@ public class HomeFragment extends Fragment {
                 if (response.isSuccessful()) {
                     Toast.makeText(getContext(), "Salida registrada", Toast.LENGTH_SHORT).show();
                     actualizarEstado();
+                } else {
+                    mostrarErrorServidor(response);
                 }
             }
             @Override
             public void onFailure(Call<Void> call, Throwable t) {
-                Toast.makeText(getContext(), "Error de red", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Sin conexión", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    /**
+     * Parsea el errorBody del servidor y muestra solo el mensaje limpio.
+     * El servidor devuelve JSON como: {"mensaje": "Fuera del rango permitido"}
+     */
+    private void mostrarErrorServidor(Response<?> response) {
+        try {
+            String body = response.errorBody().string();
+            String mensaje = "Operación no permitida";
+
+            // Buscar campo "mensaje" (Flask RRHH)
+            if (body.contains("\"mensaje\"")) {
+                mensaje = body.split("\"mensaje\"\\s*:\\s*\"")[1].split("\"")[0];
+            }
+            // Fallback: campo "msg" (JWT errors)
+            else if (body.contains("\"msg\"")) {
+                mensaje = body.split("\"msg\"\\s*:\\s*\"")[1].split("\"")[0];
+            }
+
+            String mensajeFinal = mensaje;
+            if (getContext() != null) {
+                Toast.makeText(getContext(), mensajeFinal, Toast.LENGTH_LONG).show();
+            }
+        } catch (Exception e) {
+            if (getContext() != null) {
+                Toast.makeText(getContext(), "Operación no permitida", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     @Override

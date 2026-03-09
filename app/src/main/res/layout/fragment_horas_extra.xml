@@ -1,80 +1,199 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp"
-    android:gravity="center_horizontal">
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Consultar Horas Extra"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:paddingBottom="16dp"/>
-
-    <EditText
-        android:id="@+id/etMes"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Mes (YYYY-MM)"
-        android:inputType="text"/>
-
-    <Button
-        android:id="@+id/btnConsultar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Consultar"/>
+    android:background="@color/background"
+    android:fillViewport="true">
 
     <LinearLayout
-        android:id="@+id/layoutResultado"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:layout_marginTop="24dp"
-        android:padding="16dp"
-        android:background="#F5F5F5"
-        android:visibility="gone">
+        android:paddingTop="24dp"
+        android:paddingBottom="32dp"
+        android:paddingHorizontal="16dp">
 
         <TextView
-            android:id="@+id/tvMes"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="16sp"
+            android:text="Resumen de horas"
+            android:textSize="22sp"
             android:textStyle="bold"
-            android:paddingBottom="12dp"/>
+            android:textColor="@color/text_primary"
+            android:fontFamily="sans-serif-medium"
+            android:paddingHorizontal="4dp"
+            android:layout_marginBottom="20dp"/>
 
-        <TextView
-            android:id="@+id/tvHorasTrabajadas"
+        <!-- Card búsqueda -->
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="15sp"
-            android:paddingBottom="6dp"/>
+            app:cardCornerRadius="20dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="@color/surface"
+            android:layout_marginBottom="20dp">
 
-        <TextView
-            android:id="@+id/tvHorasTeoicas"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Mes (YYYY-MM)"
+                    android:layout_marginBottom="14dp"
+                    app:startIconDrawable="@android:drawable/ic_menu_recent_history"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusBottomEnd="12dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etMes"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="text"/>
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnConsultar"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:text="Consultar"
+                    android:textSize="15sp"
+                    app:cornerRadius="14dp"/>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Card resultado (oculto inicialmente) -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/layoutResultado"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="15sp"
-            android:paddingBottom="6dp"/>
+            app:cardCornerRadius="20dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="@color/surface"
+            android:visibility="gone">
 
-        <TextView
-            android:id="@+id/tvHorasExtra"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="18sp"
-            android:textStyle="bold"/>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="24dp">
 
-        <TextView
-            android:id="@+id/tvRegistros"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="13sp"
-            android:textColor="#888888"
-            android:paddingTop="6dp"/>
+                <TextView
+                    android:id="@+id/tvMes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    android:layout_marginBottom="20dp"/>
+
+                <!-- Fila horas trabajadas -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="14dp">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Horas trabajadas"
+                        android:textSize="14sp"
+                        android:textColor="@color/text_secondary"/>
+                    <TextView
+                        android:id="@+id/tvHorasTrabajadas"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"/>
+                </LinearLayout>
+
+                <!-- Divider -->
+                <View android:layout_width="match_parent" android:layout_height="1dp"
+                    android:background="@color/divider" android:layout_marginBottom="14dp"/>
+
+                <!-- Fila horas teóricas -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="14dp">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Horas teóricas"
+                        android:textSize="14sp"
+                        android:textColor="@color/text_secondary"/>
+                    <TextView
+                        android:id="@+id/tvHorasTeoicas"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"/>
+                </LinearLayout>
+
+                <!-- Divider -->
+                <View android:layout_width="match_parent" android:layout_height="1dp"
+                    android:background="@color/divider" android:layout_marginBottom="14dp"/>
+
+                <!-- Horas extra destacada -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="20dp">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Horas extra"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"/>
+                    <TextView
+                        android:id="@+id/tvHorasExtra"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="18sp"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+
+                <!-- Badge registros -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:background="@color/surface_2"
+                    android:padding="12dp"
+                    android:gravity="center_vertical">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Registros completados"
+                        android:textSize="13sp"
+                        android:textColor="@color/text_secondary"/>
+                    <TextView
+                        android:id="@+id/tvRegistros"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/primary"/>
+                </LinearLayout>
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
 
     </LinearLayout>
-
-</LinearLayout>
+</ScrollView>

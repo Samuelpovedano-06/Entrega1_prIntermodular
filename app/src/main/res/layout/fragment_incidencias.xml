@@ -1,48 +1,97 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:background="@color/background"
+    android:paddingTop="24dp">
 
+    <!-- Header -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Nueva Incidencia"
-        android:textSize="18sp"
+        android:text="Incidencias"
+        android:textSize="22sp"
         android:textStyle="bold"
-        android:paddingBottom="8dp"/>
+        android:textColor="@color/text_primary"
+        android:fontFamily="sans-serif-medium"
+        android:paddingHorizontal="20dp"
+        android:layout_marginBottom="16dp"/>
 
-    <EditText
-        android:id="@+id/etDescripcion"
-        android:layout_width="match_parent"
-        android:layout_height="120dp"
-        android:hint="Describe la incidencia..."
-        android:gravity="top"
-        android:inputType="textMultiLine"
-        android:background="@android:drawable/edit_text"
-        android:padding="8dp"/>
-
-    <Button
-        android:id="@+id/btnEnviarIncidencia"
+    <!-- Card nueva incidencia -->
+    <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Registrar Incidencia"/>
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="20dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="2dp"
+        app:cardBackgroundColor="@color/surface">
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Nueva incidencia"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:layout_marginBottom="12dp"/>
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Describe la incidencia..."
+                android:layout_marginBottom="14dp"
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusBottomEnd="12dp">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etDescripcion"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minLines="3"
+                    android:gravity="top"
+                    android:inputType="textMultiLine"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnEnviarIncidencia"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="Registrar incidencia"
+                android:textSize="15sp"
+                app:cornerRadius="14dp"/>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Lista -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Mis Incidencias"
-        android:textSize="18sp"
+        android:text="Historial"
+        android:textSize="15sp"
         android:textStyle="bold"
-        android:paddingTop="16dp"
-        android:paddingBottom="8dp"/>
+        android:textColor="@color/text_secondary"
+        android:paddingHorizontal="20dp"
+        android:layout_marginBottom="8dp"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvIncidencias"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"/>
+        android:layout_weight="1"
+        android:paddingHorizontal="16dp"
+        android:clipToPadding="false"
+        android:paddingBottom="16dp"/>
 
 </LinearLayout>

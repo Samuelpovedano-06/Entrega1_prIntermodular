@@ -8,18 +8,17 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 
 import com.example.rrhh_android_app.R;
 import com.example.rrhh_android_app.api.RetrofitClient;
 import com.example.rrhh_android_app.model.ResumenMensualResponse;
-
+import com.google.android.material.textfield.TextInputEditText;
 
 import java.util.Calendar;
 
@@ -29,9 +28,9 @@ import retrofit2.Response;
 
 public class HorasExtraFragment extends Fragment {
 
-    private EditText etMes;
+    private TextInputEditText etMes;
     private Button btnConsultar;
-    private LinearLayout layoutResultado;
+    private CardView layoutResultado;
     private TextView tvMes, tvHorasTrabajadas, tvHorasTeoicas, tvHorasExtra, tvRegistros;
     private String token;
 
@@ -51,13 +50,12 @@ public class HorasExtraFragment extends Fragment {
         SharedPreferences pref = getActivity().getSharedPreferences("RRHH_PREFS", Context.MODE_PRIVATE);
         token = "Bearer " + pref.getString("token", "");
 
-        // Poner mes actual por defecto
         Calendar cal = Calendar.getInstance();
         String mesActual = String.format("%d-%02d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1);
         etMes.setText(mesActual);
 
         btnConsultar.setOnClickListener(v -> {
-            String mes = etMes.getText().toString().trim();
+            String mes = etMes.getText() != null ? etMes.getText().toString().trim() : "";
             if (mes.isEmpty()) {
                 Toast.makeText(getContext(), "Introduce un mes (YYYY-MM)", Toast.LENGTH_SHORT).show();
                 return;
@@ -76,19 +74,22 @@ public class HorasExtraFragment extends Fragment {
                     ResumenMensualResponse r = response.body();
                     layoutResultado.setVisibility(View.VISIBLE);
                     tvMes.setText("Mes: " + r.getMes());
-                    tvHorasTrabajadas.setText("Horas trabajadas: " + r.getHorasTrabajadas() + "h");
-                    tvHorasTeoicas.setText("Horas teóricas: " + r.getHorasTeoicas() + "h");
+                    tvHorasTrabajadas.setText(r.getHorasTrabajadas() + " h");
+                    tvHorasTeoicas.setText(r.getHorasTeoicas() + " h");
                     double extra = r.getHorasExtra();
-                    tvHorasExtra.setText("Horas extra: " + extra + "h");
-                    tvHorasExtra.setTextColor(extra >= 0 ? Color.parseColor("#2E7D32") : Color.RED);
-                    tvRegistros.setText("Registros completados: " + r.getRegistros());
+                    tvHorasExtra.setText((extra >= 0 ? "+" : "") + extra + " h");
+                    tvHorasExtra.setTextColor(extra >= 0
+                            ? Color.parseColor("#00C853")
+                            : Color.parseColor("#F44336"));
+                    tvRegistros.setText(String.valueOf(r.getRegistros()));
                 } else {
                     Toast.makeText(getContext(), "Error al consultar", Toast.LENGTH_SHORT).show();
                 }
             }
+
             @Override
             public void onFailure(Call<ResumenMensualResponse> call, Throwable t) {
-                Toast.makeText(getContext(), "Error de red", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Sin conexión", Toast.LENGTH_SHORT).show();
             }
         });
     }

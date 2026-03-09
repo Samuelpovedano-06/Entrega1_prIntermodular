@@ -1,48 +1,90 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:background="@color/background"
+    android:paddingTop="16dp">
 
-    <TextView
-        android:id="@+id/tvNombre"
+    <!-- Header -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:paddingBottom="4dp"/>
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingBottom="12dp">
 
-    <TextView
-        android:id="@+id/tvCoords"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Cargando ubicación..."
-        android:textSize="13sp"
-        android:gravity="center"
-        android:paddingBottom="8dp"/>
+        <TextView
+            android:id="@+id/tvNombre"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            android:fontFamily="sans-serif-medium"/>
 
-    <org.osmdroid.views.MapView
-        android:id="@+id/mapview"
+        <TextView
+            android:id="@+id/tvCoords"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Obteniendo ubicación..."
+            android:textSize="12sp"
+            android:textColor="@color/text_hint"
+            android:layout_marginTop="2dp"/>
+    </LinearLayout>
+
+    <!-- Mapa con borde redondeado -->
+    <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"/>
+        android:layout_weight="1"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="12dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="4dp">
 
-    <Button
-        android:id="@+id/btnFichar"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:layout_marginTop="12dp"
-        android:text="FICHAR ENTRADA"
-        android:textColor="@android:color/white"/>
+        <org.osmdroid.views.MapView
+            android:id="@+id/mapview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+    </androidx.cardview.widget.CardView>
 
-    <Button
-        android:id="@+id/btnNfc"
+    <!-- Botones ficaje -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="ENTRADA POR NFC"
-        style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingBottom="16dp"
+        android:spacing="10dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnFichar"
+            android:layout_width="match_parent"
+            android:layout_height="58dp"
+            android:text="FICHAR ENTRADA"
+            android:textSize="16sp"
+            android:textColor="@color/white"
+            android:letterSpacing="0.06"
+            android:fontFamily="sans-serif-medium"
+            app:cornerRadius="16dp"
+            app:backgroundTint="@color/success"
+            android:layout_marginBottom="10dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnNfc"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="ENTRADA POR NFC"
+            android:textSize="14sp"
+            android:letterSpacing="0.04"
+            app:cornerRadius="16dp"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            app:strokeColor="@color/primary"
+            app:strokeWidth="1.5dp"
+            android:textColor="@color/primary"/>
+
+    </LinearLayout>
 
 </LinearLayout>
