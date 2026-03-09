@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:gravity="center_horizontal">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Consultar Horas Extra"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:paddingBottom="16dp"/>
+
+    <EditText
+        android:id="@+id/etMes"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Mes (YYYY-MM)"
+        android:inputType="text"/>
+
+    <Button
+        android:id="@+id/btnConsultar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Consultar"/>
+
+    <LinearLayout
+        android:id="@+id/layoutResultado"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="24dp"
+        android:padding="16dp"
+        android:background="#F5F5F5"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvMes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:paddingBottom="12dp"/>
+
+        <TextView
+            android:id="@+id/tvHorasTrabajadas"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="15sp"
+            android:paddingBottom="6dp"/>
+
+        <TextView
+            android:id="@+id/tvHorasTeoicas"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="15sp"
+            android:paddingBottom="6dp"/>
+
+        <TextView
+            android:id="@+id/tvHorasExtra"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/tvRegistros"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:textColor="#888888"
+            android:paddingTop="6dp"/>
+
+    </LinearLayout>
+
+</LinearLayout>

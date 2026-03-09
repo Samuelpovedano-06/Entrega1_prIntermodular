@@ -48,8 +48,13 @@ public class LoginFragment extends Fragment {
             public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     SharedPreferences pref = getActivity().getSharedPreferences("RRHH_PREFS", Context.MODE_PRIVATE);
-                    pref.edit().putString("token", response.body().getToken()).apply();
-                    Navigation.findNavController(getView()).navigate(R.id.action_login_to_home);
+                    pref.edit()
+                            .putString("token", response.body().getToken())
+                            .putString("nombre", response.body().getNombre())
+                            .putString("rol", response.body().getRol())
+                            .apply();
+                    Navigation.findNavController(getView()).navigate(R.id.homeFragment);
+
                 } else {
                     Toast.makeText(getContext(), "Credenciales incorrectas", Toast.LENGTH_SHORT).show();
                 }
