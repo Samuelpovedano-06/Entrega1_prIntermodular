@@ -41,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
                 // Solo mostrar admin si el usuario es admin
                 SharedPreferences pref = getSharedPreferences("RRHH_PREFS", MODE_PRIVATE);
                 String rol = pref.getString("rol", "");
-                if (rol.equalsIgnoreCase("admin")) {
+                if (rol.equalsIgnoreCase("Administrador") || rol.equalsIgnoreCase("Superadministrador")) {
                     bottomNav.getMenu().findItem(R.id.adminFragment).setVisible(true);
                 } else {
                     bottomNav.getMenu().findItem(R.id.adminFragment).setVisible(false);
