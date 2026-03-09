@@ -2,6 +2,7 @@ package com.example.rrhh_android_app.notifications;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.work.Worker;
@@ -9,8 +10,8 @@ import androidx.work.WorkerParameters;
 
 import com.example.rrhh_android_app.api.RetrofitClient;
 import com.example.rrhh_android_app.model.EstadoResponse;
-import com.example.rrhh_android_app.model.HorarioResponse;
 import com.example.rrhh_android_app.model.FranjaHoraria;
+import com.example.rrhh_android_app.model.HorarioResponse;
 
 import java.util.Calendar;
 import java.util.List;
@@ -19,6 +20,8 @@ import retrofit2.Response;
 
 public class FichajeWorker extends Worker {
 
+    private static final String TAG = "FichajeWorker";
+
     public FichajeWorker(@NonNull Context context, @NonNull WorkerParameters params) {
         super(context, params);
     }
@@ -26,11 +29,16 @@ public class FichajeWorker extends Worker {
     @NonNull
     @Override
     public Result doWork() {
+        Log.d(TAG, "Worker ejecutado: " + new java.util.Date());
+
         Context context = getApplicationContext();
         SharedPreferences pref = context.getSharedPreferences("RRHH_PREFS", Context.MODE_PRIVATE);
         String token = pref.getString("token", null);
 
-        if (token == null) return Result.success();
+        if (token == null) {
+            Log.d(TAG, "Sin token, saliendo.");
+            return Result.success();
+        }
 
         String bearerToken = "Bearer " + token;
 
@@ -41,59 +49,80 @@ public class FichajeWorker extends Worker {
             Response<HorarioResponse> horarioResp = RetrofitClient.getApiService()
                     .getMiHorario(bearerToken).execute();
 
-            if (!horarioResp.isSuccessful() || horarioResp.body() == null) return Result.success();
+            if (!horarioResp.isSuccessful() || horarioResp.body() == null) {
+                Log.d(TAG, "Error obteniendo horario: " + horarioResp.code());
+                return Result.success();
+            }
 
             List<FranjaHoraria> franjas = horarioResp.body().getFranjas();
-            if (franjas == null || franjas.isEmpty()) return Result.success();
+            if (franjas == null || franjas.isEmpty()) {
+                Log.d(TAG, "Sin franjas horarias.");
+                return Result.success();
+            }
 
             Calendar cal = Calendar.getInstance();
-            // Calendar: SUNDAY=1, MONDAY=2... convertir a ISO (Lunes=1, Domingo=7)
             int diaCal = cal.get(Calendar.DAY_OF_WEEK);
             int diaSemana = (diaCal == Calendar.SUNDAY) ? 7 : diaCal - 1;
-
             int horaActualMin = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE);
 
             boolean fichado = estadoResp.isSuccessful()
                     && estadoResp.body() != null
                     && estadoResp.body().isFichado();
 
+            Log.d(TAG, "Dia: " + diaSemana + " | HoraMin: " + horaActualMin + " | Fichado: " + fichado);
+
             for (FranjaHoraria franja : franjas) {
                 if (franja.getIdDia() != diaSemana) continue;
 
                 int minEntrada = parsearMinutos(franja.getHoraEntrada());
                 int minSalida = parsearMinutos(franja.getHoraSalida());
+                String horaEntradaStr = formatearHora(franja.getHoraEntrada());
+                String horaSalidaStr = formatearHora(franja.getHoraSalida());
 
-                // 15 min después de entrada y antes de 60 min, sin fichar
-                if (horaActualMin > minEntrada + 15 &&
-                        horaActualMin < minEntrada + 60 && !fichado) {
-                    NotificationHelper.enviarNotificacion(context, 1,
-                            "⚠️ No has fichado la entrada",
-                            "Tu hora de entrada era las " + franja.getHoraEntrada());
+                Log.d(TAG, "Franja activa - entrada: " + minEntrada + " salida: " + minSalida);
+
+                boolean dentroVentanaEntrada = horaActualMin >= minEntrada + 15
+                        && horaActualMin <= minEntrada + 180;
+                boolean dentroVentanaSalida = horaActualMin >= minSalida
+                        && horaActualMin <= minSalida + 180;
+
+                if (dentroVentanaEntrada && !fichado) {
+                    Log.d(TAG, "Activando alarma recordatorio ENTRADA");
+                    FichajeAlarmManager.activarRecordatorioEntrada(context, horaEntradaStr);
+                } else {
+                    FichajeAlarmManager.cancelarRecordatorioEntrada(context);
                 }
 
-                // 15 min después de salida y antes de 60 min, aún fichado
-                if (horaActualMin > minSalida + 15 &&
-                        horaActualMin < minSalida + 60 && fichado) {
-                    NotificationHelper.enviarNotificacion(context, 2,
-                            "⚠️ No has fichado la salida",
-                            "Tu hora de salida era las " + franja.getHoraSalida());
+                if (dentroVentanaSalida && fichado) {
+                    Log.d(TAG, "Activando alarma recordatorio SALIDA");
+                    FichajeAlarmManager.activarRecordatorioSalida(context, horaSalidaStr);
+                } else {
+                    FichajeAlarmManager.cancelarRecordatorioSalida(context);
                 }
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error en worker: " + e.getMessage(), e);
         }
 
         return Result.success();
     }
 
-    // Convierte "HH:mm" a minutos totales desde medianoche
     private int parsearMinutos(String horaStr) {
         try {
+            if (horaStr == null) return 0;
             String[] partes = horaStr.split(":");
             return Integer.parseInt(partes[0]) * 60 + Integer.parseInt(partes[1]);
         } catch (Exception e) {
+            Log.e(TAG, "Error parseando hora: " + horaStr);
             return 0;
         }
+    }
+
+    private String formatearHora(String horaStr) {
+        if (horaStr == null) return "";
+        String[] partes = horaStr.split(":");
+        if (partes.length >= 2) return partes[0] + ":" + partes[1];
+        return horaStr;
     }
 }

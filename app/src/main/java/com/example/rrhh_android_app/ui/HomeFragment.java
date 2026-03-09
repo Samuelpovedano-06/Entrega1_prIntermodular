@@ -23,6 +23,7 @@ import com.example.rrhh_android_app.R;
 import com.example.rrhh_android_app.api.RetrofitClient;
 import com.example.rrhh_android_app.model.EstadoResponse;
 import com.example.rrhh_android_app.model.LocationRequest;
+import com.example.rrhh_android_app.notifications.FichajeAlarmManager;
 import com.example.rrhh_android_app.notifications.FichajeScheduler;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -182,6 +183,7 @@ public class HomeFragment extends Fragment {
                     public void onResponse(Call<Void> call, Response<Void> response) {
                         if (response.isSuccessful()) {
                             Toast.makeText(getContext(), "¡Entrada registrada!", Toast.LENGTH_SHORT).show();
+                            FichajeAlarmManager.cancelarRecordatorioEntrada(getContext());
                             actualizarEstado();
                         } else {
                             mostrarErrorServidor(response);
@@ -204,6 +206,7 @@ public class HomeFragment extends Fragment {
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) {
                     Toast.makeText(getContext(), "Salida registrada", Toast.LENGTH_SHORT).show();
+                    FichajeAlarmManager.cancelarRecordatorioSalida(getContext());
                     actualizarEstado();
                 } else {
                     mostrarErrorServidor(response);
