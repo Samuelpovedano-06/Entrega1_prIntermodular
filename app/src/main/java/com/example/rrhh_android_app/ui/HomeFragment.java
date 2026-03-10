@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.nfc.NfcAdapter;
 import android.os.Bundle;
+import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -26,7 +27,10 @@ import com.example.rrhh_android_app.model.LocationRequest;
 import com.example.rrhh_android_app.notifications.FichajeAlarmManager;
 import com.example.rrhh_android_app.notifications.FichajeScheduler;
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
 
 import org.osmdroid.config.Configuration;
 import org.osmdroid.util.GeoPoint;
@@ -43,9 +47,11 @@ public class HomeFragment extends Fragment {
     private TextView tvCoords, tvNombre;
     private Button btnFichar, btnNfc;
     private FusedLocationProviderClient fusedLocationClient;
+    private LocationCallback locationCallback;
     private String token;
     private boolean estaFichado = false;
     private NfcAdapter nfcAdapter;
+    private double latActual = 0, lonActual = 0;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -71,12 +77,11 @@ public class HomeFragment extends Fragment {
         if (tvNombre != null) tvNombre.setText("Hola, " + nombre);
 
         FichajeScheduler.programarWorker(getContext());
-
         actualizarEstado();
-        centrarMapaEnUsuario();
+        iniciarActualizacionUbicacion();
 
         btnFichar.setOnClickListener(v -> {
-            if (!estaFichado) obtenerUbicacionYFichar();
+            if (!estaFichado) ficharEntradaConUbicacionActual();
             else realizarSalida();
         });
 
@@ -95,15 +100,82 @@ public class HomeFragment extends Fragment {
         return view;
     }
 
-    // Llamado desde MainActivity cuando se detecta una tag NFC
+    private void iniciarActualizacionUbicacion() {
+        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+            return;
+        }
+
+        // Configurar solicitud de ubicación en tiempo real
+        com.google.android.gms.location.LocationRequest locationRequest = new com.google.android.gms.location.LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
+                .setMinUpdateIntervalMillis(3000)
+                .build();
+
+        locationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(@NonNull LocationResult locationResult) {
+                if (locationResult == null || getContext() == null) return;
+                android.location.Location location = locationResult.getLastLocation();
+                if (location != null) {
+                    latActual = location.getLatitude();
+                    lonActual = location.getLongitude();
+
+                    // Actualizar texto de coordenadas
+                    tvCoords.setText(String.format("Lat: %.5f  Lon: %.5f", latActual, lonActual));
+
+                    // Actualizar marcador en el mapa
+                    GeoPoint punto = new GeoPoint(latActual, lonActual);
+                    map.getController().setCenter(punto);
+                    Marker marker = new Marker(map);
+                    marker.setPosition(punto);
+                    marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+                    marker.setTitle("Tú estás aquí");
+                    map.getOverlays().clear();
+                    map.getOverlays().add(marker);
+                    map.invalidate();
+                }
+            }
+        };
+
+        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper());
+    }
+
+    private void ficharEntradaConUbicacionActual() {
+        if (latActual == 0 && lonActual == 0) {
+            Toast.makeText(getContext(), "Obteniendo ubicación GPS...", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        com.example.rrhh_android_app.model.LocationRequest loc =
+                new com.example.rrhh_android_app.model.LocationRequest(latActual, lonActual);
+        RetrofitClient.getApiService().ficharEntrada(token, loc).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(getContext(), "¡Entrada registrada!", Toast.LENGTH_SHORT).show();
+                    FichajeAlarmManager.cancelarRecordatorioEntrada(getContext());
+                    actualizarEstado();
+                } else {
+                    mostrarErrorServidor(response);
+                }
+            }
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                Toast.makeText(getContext(), "Sin conexión", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
     public void procesarNfc() {
         if (!estaFichado) {
-            RetrofitClient.getApiService().ficharEntrada(token, new LocationRequest(0, 0))
+            com.example.rrhh_android_app.model.LocationRequest loc =
+                    new com.example.rrhh_android_app.model.LocationRequest(latActual, lonActual);
+            RetrofitClient.getApiService().ficharEntrada(token, loc)
                     .enqueue(new Callback<Void>() {
                         @Override
                         public void onResponse(Call<Void> call, Response<Void> response) {
                             if (response.isSuccessful()) {
                                 Toast.makeText(getContext(), "¡Entrada NFC registrada!", Toast.LENGTH_SHORT).show();
+                                FichajeAlarmManager.cancelarRecordatorioEntrada(getContext());
                                 actualizarEstado();
                             } else {
                                 mostrarErrorServidor(response);
@@ -119,35 +191,11 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    private void centrarMapaEnUsuario() {
-        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-            return;
-        }
-        fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
-            if (location != null) {
-                GeoPoint startPoint = new GeoPoint(location.getLatitude(), location.getLongitude());
-                map.getController().setCenter(startPoint);
-                tvCoords.setText(String.format("Lat: %.5f  Lon: %.5f", location.getLatitude(), location.getLongitude()));
-                Marker startMarker = new Marker(map);
-                startMarker.setPosition(startPoint);
-                startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-                startMarker.setTitle("Tú estás aquí");
-                map.getOverlays().clear();
-                map.getOverlays().add(startMarker);
-            }
-        });
-    }
-
     private void actualizarEstado() {
         RetrofitClient.getApiService().getEstado(token).enqueue(new Callback<EstadoResponse>() {
             @Override
             public void onResponse(Call<EstadoResponse> call, Response<EstadoResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    estaFichado = response.body().isFichado();
-                } else {
-                    estaFichado = false;
-                }
+                estaFichado = response.isSuccessful() && response.body() != null && response.body().isFichado();
                 actualizarBoton();
             }
             @Override
@@ -170,36 +218,6 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    private void obtenerUbicacionYFichar() {
-        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-            return;
-        }
-        fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
-            if (location != null) {
-                LocationRequest loc = new LocationRequest(location.getLatitude(), location.getLongitude());
-                RetrofitClient.getApiService().ficharEntrada(token, loc).enqueue(new Callback<Void>() {
-                    @Override
-                    public void onResponse(Call<Void> call, Response<Void> response) {
-                        if (response.isSuccessful()) {
-                            Toast.makeText(getContext(), "¡Entrada registrada!", Toast.LENGTH_SHORT).show();
-                            FichajeAlarmManager.cancelarRecordatorioEntrada(getContext());
-                            actualizarEstado();
-                        } else {
-                            mostrarErrorServidor(response);
-                        }
-                    }
-                    @Override
-                    public void onFailure(Call<Void> call, Throwable t) {
-                        Toast.makeText(getContext(), "Sin conexión", Toast.LENGTH_SHORT).show();
-                    }
-                });
-            } else {
-                Toast.makeText(getContext(), "No se pudo obtener la ubicación GPS", Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
     private void realizarSalida() {
         RetrofitClient.getApiService().ficharSalida(token).enqueue(new Callback<Void>() {
             @Override
@@ -219,25 +237,21 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    /**
-     * Parsea el errorBody del servidor y muestra solo el mensaje limpio.
-     * El servidor devuelve JSON como: {"mensaje": "Fuera del rango permitido"}
-     */
     private void mostrarErrorServidor(Response<?> response) {
         try {
             String body = response.errorBody().string();
             String mensaje = "Operación no permitida";
 
-            // Buscar campo "mensaje" (Flask RRHH)
-            if (body.contains("\"mensaje\"")) {
+            // Flask-smorest devuelve "message" o "errors"
+            if (body.contains("\"message\"")) {
+                mensaje = body.split("\"message\"\\s*:\\s*\"")[1].split("\"")[0];
+            } else if (body.contains("\"msg\"")) {
+                mensaje = body.split("\"msg\"\\s*:\\s*\"")[1].split("\"")[0];
+            } else if (body.contains("\"mensaje\"")) {
                 mensaje = body.split("\"mensaje\"\\s*:\\s*\"")[1].split("\"")[0];
             }
-            // Fallback: campo "msg" (JWT errors)
-            else if (body.contains("\"msg\"")) {
-                mensaje = body.split("\"msg\"\\s*:\\s*\"")[1].split("\"")[0];
-            }
 
-            String mensajeFinal = mensaje;
+            String mensajeFinal = decodificarUnicode(mensaje);
             if (getContext() != null) {
                 Toast.makeText(getContext(), mensajeFinal, Toast.LENGTH_LONG).show();
             }
@@ -248,15 +262,35 @@ public class HomeFragment extends Fragment {
         }
     }
 
+    private String decodificarUnicode(String texto) {
+        try {
+            return new String(texto.getBytes("ISO-8859-1"), "UTF-8");
+        } catch (Exception e) {
+            // Fallback: reemplazar secuencias \\uXXXX manualmente
+            return texto
+                    .replace("\\u00e1", "á").replace("\\u00e9", "é")
+                    .replace("\\u00ed", "í").replace("\\u00f3", "ó")
+                    .replace("\\u00fa", "ú").replace("\\u00f1", "ñ")
+                    .replace("\\u00c1", "Á").replace("\\u00c9", "É")
+                    .replace("\\u00cd", "Í").replace("\\u00d3", "Ó")
+                    .replace("\\u00da", "Ú").replace("\\u00d1", "Ñ");
+        }
+    }
+
     @Override
     public void onResume() {
         super.onResume();
         map.onResume();
+        iniciarActualizacionUbicacion();
     }
 
     @Override
     public void onPause() {
         super.onPause();
         map.onPause();
+        // Detener actualizaciones para ahorrar batería
+        if (fusedLocationClient != null && locationCallback != null) {
+            fusedLocationClient.removeLocationUpdates(locationCallback);
+        }
     }
 }

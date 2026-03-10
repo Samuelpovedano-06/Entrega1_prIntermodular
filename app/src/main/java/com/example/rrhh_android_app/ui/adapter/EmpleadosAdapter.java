@@ -9,19 +9,46 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.rrhh_android_app.R;
-import com.example.rrhh_android_app.model.EmpleadoResponse;
 
 import java.util.List;
 
 public class EmpleadosAdapter extends RecyclerView.Adapter<EmpleadosAdapter.ViewHolder> {
 
-    private List<EmpleadoResponse> lista;
+    public static class EmpleadoSimple {
+        public int idTrabajador;
+        public String nombre;
+        public String apellidos;
+        public String nif;
 
-    public EmpleadosAdapter(List<EmpleadoResponse> lista) {
+        public EmpleadoSimple(int id, String nombre, String apellidos, String nif) {
+            this.idTrabajador = id;
+            this.nombre = nombre;
+            this.apellidos = apellidos;
+            this.nif = nif;
+        }
+
+        public int getIdTrabajador() { return idTrabajador; }
+        public String getNombre() { return nombre; }
+        public String getApellidos() { return apellidos; }
+        public String getNif() { return nif; }
+    }
+
+    public interface OnEmpleadoClickListener {
+        void onEmpleadoClick(EmpleadoSimple empleado);
+    }
+
+    private List<EmpleadoSimple> lista;
+    private OnEmpleadoClickListener listener;
+
+    public EmpleadosAdapter(List<EmpleadoSimple> lista) {
         this.lista = lista;
     }
 
-    public void actualizar(List<EmpleadoResponse> nuevaLista) {
+    public void setOnEmpleadoClickListener(OnEmpleadoClickListener listener) {
+        this.listener = listener;
+    }
+
+    public void actualizar(List<EmpleadoSimple> nuevaLista) {
         this.lista = nuevaLista;
         notifyDataSetChanged();
     }
@@ -36,9 +63,12 @@ public class EmpleadosAdapter extends RecyclerView.Adapter<EmpleadosAdapter.View
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        EmpleadoResponse emp = lista.get(position);
+        EmpleadoSimple emp = lista.get(position);
         holder.tvNombre.setText(emp.getNombre() + " " + emp.getApellidos());
         holder.tvNif.setText(emp.getNif());
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) listener.onEmpleadoClick(emp);
+        });
     }
 
     @Override
